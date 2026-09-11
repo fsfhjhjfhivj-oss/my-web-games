@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cursed Escape - Web Game</title>
+    <style>
+        body {
+            background-color: #0d0d0d;
+            color: #ffffff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            text-align: center;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 {
+            color: #ff3333;
+            margin-bottom: 5px;
+        }
+        p {
+            color: #aaaaaa;
+        }
+        canvas {
+            background-color: #1a1a1a;
+            border: 3px solid #333333;
+            box-shadow: 0 0 20px rgba(255, 0, 0, 0.2);
+            display: block;
+            margin: 20px auto;
+            border-radius: 8px;
+        }
+        .scoreboard {
+            font-size: 20px;
+            font-weight: bold;
+            color: #00ffcc;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Cursed Escape</h1>
+    <p>Use the <strong>Arrow Keys</strong> to move. Collect the blue glowing orbs and avoid the red entity!</p>
+    <div class="scoreboard">Score: <span id="scoreVal">0</span></div>
+    
+    <canvas id="gameCanvas" width="700" height="450"></canvas>
+
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const scoreElement = document.getElementById("scoreVal");
+
+        // Game state variables
+        let score = 0;
+        let isGameOver = false;
+
+        // Player object
+        let player = {
+            x: 330,
+            y: 200,
+            size: 22,
+            speed: 5,
+            color: "#00ffcc"
+        };
+
+        // Enemy (The threat)
+        let enemy = {
+            x: 50,
+            y: 50,
+            size: 25,
+            speed: 2.2,
+            color: "#ff3333"
+        };
+
+        // Collectible item
+        let collectible = {
+            x: Math.random() * 600 + 50,
+            y: Math.random() * 350 + 50,
+            size: 15,
+            color: "#ffff00"
+        };
+
+        // Keyboard tracking
+        let inputKeys = {};
+        window.addEventListener("keydown", (e) => inputKeys[e.key] = true);
+        window.addEventListener("keyup", (e) => inputKeys[e.key] = false);
+
+        function resetGame() {
+            score = 0;
+            scoreElement.innerText = score;
+            player.x = 330;
+            player.y = 200;
+            enemy.x = 50;
+            enemy.y = 50;
+            isGameOver = false;
+        }
+
+        function updateGame() {
+            if (isGameOver) return;
+
+            // Player movement controls
+            if ((inputKeys["ArrowUp"] || inputKeys["w"]) && player.y > 0) player.y -= player.speed;
+            if ((inputKeys["ArrowDown"] || inputKeys["s"]) && player.y < canvas.height - player.size) player.y += player.speed;
+            if ((inputKeys["ArrowLeft"] || inputKeys["a"]) && player.x > 0) player.x -= player.speed;
+            if ((inputKeys["ArrowRight"] || inputKeys["d"]) && player.x < canvas.width - player.size) player.x += player.speed;
+
+            // Simple AI tracking for the enemy (follows player)
+            if (enemy.x < player.x) enemy.x += enemy.speed;
+            if (enemy.x > player.x) enemy.x -= enemy.speed;
+            if (enemy.y < player.y) enemy.y += enemy.speed;
+            if (enemy.y > player.y) enemy.y -= enemy.speed;
+
+            // Check collision with collectible
+            let distanceToItem = Math.hypot((player.x + player.size/2) - (collectible.x + collectible.size/2), 
+                                           (player.y + player.size/2) - (collectible.y + collectible.size/2));
+            if (distanceToItem < player.size/2 + collectible.size/2) {
+                score += 10;
+                scoreElement.innerText = score;
+                // Respawn collectible randomly
+                collectible.x = Math.random() * (canvas.width - 50);
+                collectible.y = Math.random() * (canvas.height - 50);
+                // Increase enemy difficulty slightly
+                enemy.speed += 0.05;
+            }
+
+            // Check collision with enemy (Game Over)
+            let distanceToEnemy = Math.hypot((player.x + player.size/2) - (enemy.x + enemy.size/2), 
+                                           (player.y + player.size/2) - (enemy.y + enemy.size/2));
+            if (distanceToEnemy < player.size/2 + enemy.size/2) {
+                isGameOver = true;
+                alert("Game Over! Final Score: " + score);
+                resetGame();
+            }
+        }
+
+        function renderGraphics() {
+            // Clear screen
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            // Draw Collectible
+            ctx.fillStyle = collectible.color;
+            ctx.beginPath();
+            ctx.arc(collectible.x + collectible.size/2, collectible.y + collectible.size/2, collectible.size/2, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Draw Player
+            ctx.fillStyle = player.color;
+            ctx.fillRect(player.x, player.y, player.size, player.size);
+
+            // Draw Enemy
+            ctx.fillStyle = enemy.color;
+            ctx.fillRect(enemy.x, enemy.y, enemy.size, enemy.size);
+        }
+
+        function mainLoop() {
+            updateGame();
+            renderGraphics();
+            requestAnimationFrame(mainLoop);
+        }
+
+        // Start the game loop
+        mainLoop();
+    </script>
+</body>
+</html>
