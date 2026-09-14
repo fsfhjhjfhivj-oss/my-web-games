@@ -52,4 +52,4 @@ def mountain_path():
         print("❄️ انزلقت في الظلام والبرد القارص. انتهت اللعبة!")
 
 if __name__ == "__main__":
-    start_game()
+    start_game() 
